@@ -1,0 +1,17 @@
+@baseUrl = http://localhost:3005
+
+# @name health
+
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+###
+# # @name authenticate
+# POST {{baseUrl}}/sessions
+# Content-Type: application/json
+
+# {
+#     "email": "john.doe2@example.com",
+#     "password": "securepassword123"
+# }
+
