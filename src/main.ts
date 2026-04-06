@@ -30,9 +30,9 @@ async function bootstrap() {
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
 
-      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || [];
+      const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || '*';
 
-      if (allowedOrigins.includes(origin) || origin.includes('*')) {
+      if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
