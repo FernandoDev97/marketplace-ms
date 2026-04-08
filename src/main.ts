@@ -63,9 +63,54 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Marketplace API Gateway')
-    .setDescription('API Gateway')
+    .setDescription(
+      `
+      API Gateway para o sistema de Marketplace com microsserviços.
+
+      Serviços disponíveis:
+      - Users Service: Autenticação e gerenciamento de usuários.
+      - Products Service: Catálogo e gestão de produtos.
+      - Checkout Service: Carrinho e processamento de pedidos.
+      - Payments Service: Processamento de pagamentos.
+      
+      Autenticação:
+      - User o JWT Bearer token para rotas protegidas.
+      - Use Session token para validaçao da sessão.
+      `,
+    )
     .setVersion('1.0')
-    .addBearerAuth()
+    .setContact(
+      'Fernando Souza',
+      'https://github.com/fernando-souza',
+      'l.fernando.dev@gmail.com',
+    )
+    .setLicense('MIT', 'https://opensource.org/licenses/MIT')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addApiKey(
+      {
+        type: 'apiKey',
+        name: 'x-session-token',
+        description: 'Session token for user validation',
+        in: 'header',
+      },
+      'Session-auth',
+    )
+    .addTag('Authentication', 'Endpoints para autenticação e autorização')
+    .addTag('Users', 'Endpoints para gestão de usuários')
+    .addTag('Products', 'Endpoints para catálogo de produtos')
+    .addTag('Checkout', 'Endpoints para carrinho e pedidos')
+    .addTag('Payments', 'Endpoints para processamento de pagamentos')
+    .addTag('Health', 'Endpoints para monitoramento de saúde')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
