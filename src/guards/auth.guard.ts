@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   ExecutionContext,
   Injectable,
@@ -6,6 +7,12 @@ import {
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { Observable } from 'rxjs';
+
+interface JwtUser {
+  userId: string;
+  email: string;
+  role: string;
+}
 
 @Injectable()
 export class JWTAuthGuard extends AuthGuard('jwt') {
@@ -28,10 +35,15 @@ export class JWTAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any) {
+  handleRequest<TUser = JwtUser>(
+    err: Error | null,
+    user: JwtUser | false,
+    _context: ExecutionContext,
+    _status?: unknown,
+  ): TUser {
     if (err || !user) {
       throw err || new UnauthorizedException();
     }
-    return user;
+    return user as TUser;
   }
 }
