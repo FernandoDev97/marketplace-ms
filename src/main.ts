@@ -114,7 +114,11 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {},
+    customSiteTitle: 'Marketplace API Gateway',
+    customfavIcon: '/favicon.ico',
+  });
 
   const port = process.env.PORT ?? 3005;
 
