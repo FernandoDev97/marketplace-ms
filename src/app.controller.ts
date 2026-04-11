@@ -20,10 +20,10 @@ export class AppController {
       status: 'ok',
       timestamp: new Date().toISOString(),
       services: {
-        users: await this.proxyService.getServiceUrl('users'),
-        products: await this.proxyService.getServiceUrl('products'),
-        checkout: await this.proxyService.getServiceUrl('checkout'),
-        payments: await this.proxyService.getServiceUrl('payments'),
+        users: await this.proxyService.getServiceHealth('users'),
+        products: await this.proxyService.getServiceHealth('products'),
+        checkout: await this.proxyService.getServiceHealth('checkout'),
+        payments: await this.proxyService.getServiceHealth('payments'),
       },
     };
   }
