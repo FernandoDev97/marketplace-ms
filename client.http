@@ -6,6 +6,22 @@ GET {{baseUrl}}/health
 Content-Type: application/json
 
 ###
+GET {{baseUrl}}/health/live
+Content-Type: application/json
+
+###
+GET {{baseUrl}}/health/ready
+Content-Type: application/json
+
+###
+GET {{baseUrl}}/health/services
+Content-Type: application/json
+
+###
+GET {{baseUrl}}/health/services/users
+Content-Type: application/json
+
+###
 # # @name authenticate
 # POST {{baseUrl}}/sessions
 # Content-Type: application/json
