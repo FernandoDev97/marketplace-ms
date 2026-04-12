@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { CircuitBreakerService } from 'src/common/circuit-breaker/circuit-breaker.service';
 import { CacheFallbackService } from 'src/common/fallback/cache.fallback';
 import { DefaultFallbackService } from 'src/common/fallback/default.fallback';
+import { RetryService } from 'src/common/retry/retry.service';
+import { TimeoutService } from 'src/common/timeout/timeout.service';
 
 interface UserInfo {
   userId: string;
@@ -23,6 +25,8 @@ export class ProxyService {
     private readonly circuitBreakerService: CircuitBreakerService,
     private readonly cacheFallbackService: CacheFallbackService,
     private readonly defaultFallbackService: DefaultFallbackService,
+    private readonly timeoutService: TimeoutService,
+    private readonly retryService: RetryService,
   ) {}
 
   async proxyRequest(
@@ -42,52 +46,46 @@ export class ProxyService {
 
     return this.circuitBreakerService.executeWithCircuitBreaker(
       async () => {
-        const enhancedHeaders = {
-          ...headers,
-          'x-user-id': userInfo?.userId,
-          'x-user-email': userInfo?.email,
-          'x-user-role': userInfo?.role,
-        };
+        return await this.retryService.executeWithExponentialBackoff(
+          async () => {
+            return await this.timeoutService.executeWithCustomTimeout(
+              async () => {
+                const enhancedHeaders = {
+                  ...headers,
+                  'x-user-id': userInfo?.userId,
+                  'x-user-email': userInfo?.email,
+                  'x-user-role': userInfo?.role,
+                };
 
-        const response = await firstValueFrom(
-          this.httpService.request({
-            method: method.toLowerCase() as HttpMethod,
-            url,
-            data,
-            headers: enhancedHeaders,
-            timeout: service.timeout,
-          }),
+                const response = await firstValueFrom(
+                  this.httpService.request({
+                    method: method.toLowerCase() as HttpMethod,
+                    url,
+                    data,
+                    headers: enhancedHeaders,
+                    timeout: service.timeout,
+                  }),
+                );
+
+                if (method.toLowerCase() === 'get') {
+                  this.cacheFallbackService.setCachedData(
+                    `${serviceName}-${path}`,
+                    response.data,
+                  );
+                }
+
+                return response.data;
+              },
+              service.timeout,
+            );
+          },
+          4,
         );
-
-        if (method.toLowerCase() === 'get') {
-          this.cacheFallbackService.setCachedData(
-            `${serviceName}-${path}`,
-            response.data,
-          );
-        }
-
-        return response.data;
       },
       `proxy-${serviceName}`,
       { failureThreshold: 3, timeout: 30000, resetTimeout: 30000 },
       fallback,
     );
-  }
-
-  async getServiceHealth(serviceName: keyof typeof serviceConfig) {
-    try {
-      const service = serviceConfig[serviceName];
-
-      const response = await firstValueFrom(
-        this.httpService.get(`${service.url}/health`, {
-          timeout: 3000,
-        }),
-      );
-
-      return { status: 'healthy', data: response.data };
-    } catch (error) {
-      return { status: 'unhealthy', error: error.message };
-    }
   }
 
   private createServiceFallback(
