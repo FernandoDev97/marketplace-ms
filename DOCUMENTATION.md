@@ -176,13 +176,17 @@ response.data
 Ponto de entrada da aplicação. Configura as camadas transversais antes de subir o servidor:
 
 ### Helmet
+
 Adiciona cabeçalhos de segurança HTTP:
+
 - `Content-Security-Policy`: restringe scripts e estilos apenas à própria origem
 - `HSTS`: força HTTPS por 1 ano, incluindo subdomínios e com preload
 - `crossOriginEmbedderPolicy`: desabilitado (evita bloqueios em contextos de embed)
 
 ### CORS
+
 Validação dinâmica de origin via callback:
+
 - Lê `process.env.CORS_ORIGIN` (suporta múltiplas origins separadas por vírgula)
 - Permite requisições sem origin (ex: curl, Postman)
 - Métodos: `GET, HEAD, PUT, PATCH, POST, DELETE`
@@ -191,12 +195,15 @@ Validação dinâmica de origin via callback:
 - Cache de preflight: 24 horas (`maxAge`)
 
 ### ValidationPipe (global)
+
 - `transform: true` — converte payloads para os tipos dos DTOs
 - `whitelist: true` — remove campos não declarados no DTO
 - `forbidNonWhitelisted: true` — lança erro se campos extras forem enviados
 
 ### Swagger
+
 Documentação automática em `/api`:
+
 - Suporte a `Bearer JWT` e `x-session-token` (API Key)
 - Tags: Authentication, Users, Products, Checkout, Payments, Health
 - Contato e licença MIT configurados
@@ -210,30 +217,35 @@ Documentação automática em `/api`:
 Agrega todos os módulos e configura comportamentos globais:
 
 ### Módulos importados
-| Módulo | Finalidade |
-|--------|-----------|
+
+| Módulo                                     | Finalidade                                                |
+| ------------------------------------------ | --------------------------------------------------------- |
 | `ConfigModule.forRoot({ isGlobal: true })` | Torna variáveis de ambiente disponíveis em todo o projeto |
-| `ThrottlerModule.forRootAsync(...)` | Configura as três faixas de rate limiting lidas do `.env` |
-| `ProxyModule` | Serviço de proxy com toda a camada de resiliência |
-| `MiddlewareModule` | Exporta o `LoggingMiddleware` |
-| `AuthModule` | JWT, login, register |
-| `HealthModule` | Endpoints `/health/*` |
-| `HealthCheckModule` | `HealthCheckService` — pinga cada microserviço |
-| `FallbackModule` | `CacheFallbackService` + `DefaultFallbackService` |
-| `CircuitBreakerModule` | `CircuitBreakerService` |
-| `TimeoutModule` | `TimeoutService` |
-| `RetryModule` | `RetryService` |
+| `ThrottlerModule.forRootAsync(...)`        | Configura as três faixas de rate limiting lidas do `.env` |
+| `ProxyModule`                              | Serviço de proxy com toda a camada de resiliência         |
+| `MiddlewareModule`                         | Exporta o `LoggingMiddleware`                             |
+| `AuthModule`                               | JWT, login, register                                      |
+| `HealthModule`                             | Endpoints `/health/*`                                     |
+| `HealthCheckModule`                        | `HealthCheckService` — pinga cada microserviço            |
+| `FallbackModule`                           | `CacheFallbackService` + `DefaultFallbackService`         |
+| `CircuitBreakerModule`                     | `CircuitBreakerService`                                   |
+| `TimeoutModule`                            | `TimeoutService`                                          |
+| `RetryModule`                              | `RetryService`                                            |
 
 ### Guard global
+
 ```typescript
 { provide: APP_GUARD, useClass: CustomThrottlerGuard }
 ```
+
 O `CustomThrottlerGuard` é o único guard ativo globalmente. O `JWTAuthGuard` está definido mas ainda não está registrado como `APP_GUARD`.
 
 ### Middleware global
+
 ```typescript
 consumer.apply(LoggingMiddleware).forRoutes('*');
 ```
+
 O `LoggingMiddleware` intercepta todas as requisições.
 
 ---
@@ -246,14 +258,27 @@ Objeto estático `serviceConfig` que define URL e timeout de cada microserviço:
 
 ```typescript
 export const serviceConfig = {
-  users:    { url: process.env.USERS_SERVICE_URL    || 'http://localhost:3000', timeout: 10000 },
-  products: { url: process.env.PRODUCTS_SERVICE_URL || 'http://localhost:3001', timeout: 10000 },
-  checkout: { url: process.env.CHECKOUT_SERVICE_URL || 'http://localhost:3003', timeout: 10000 },
-  payments: { url: process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3004', timeout: 10000 },
+  users: {
+    url: process.env.USERS_SERVICE_URL || 'http://localhost:3000',
+    timeout: 10000,
+  },
+  products: {
+    url: process.env.PRODUCTS_SERVICE_URL || 'http://localhost:3001',
+    timeout: 10000,
+  },
+  checkout: {
+    url: process.env.CHECKOUT_SERVICE_URL || 'http://localhost:3003',
+    timeout: 10000,
+  },
+  payments: {
+    url: process.env.PAYMENTS_SERVICE_URL || 'http://localhost:3004',
+    timeout: 10000,
+  },
 } as const;
 ```
 
 O `timeout` de 10 segundos é usado em dois lugares por requisição:
+
 1. No `HttpService.request()` como configuração do Axios
 2. No `TimeoutService.executeWithCustomTimeout()` como limite do `Promise.race`
 
@@ -302,6 +327,7 @@ CircuitBreaker
 
 **Propagação de identidade do usuário:**  
 Antes de enviar ao microserviço, o `proxyRequest` adiciona os seguintes headers com dados do usuário autenticado:
+
 - `x-user-id` — ID do usuário
 - `x-user-email` — Email do usuário
 - `x-user-role` — Papel/role do usuário
@@ -313,15 +339,15 @@ Toda resposta bem-sucedida de requisições `GET` é salva no `CacheFallbackServ
 
 Definidos no método privado `createServiceFallback()`:
 
-| Serviço | Método | Fallback |
-|---------|--------|---------|
-| `users` | `POST /auth/login` | Erro: "Authentication service unavailable" |
-| `users` | qualquer outro | Erro: "User service unavailable" |
-| `products` | `GET` | Cache (default: `{ products: [], total: 0, page: 1, limit: 10 }`) |
-| `products` | não-GET | Erro: "Product service unavailable" |
-| `checkout` | qualquer | Erro: "checkout service unavailable" |
-| `payments` | qualquer | Erro: "payments service unavailable" |
-| padrão | qualquer | Erro: "Service unavailable" |
+| Serviço    | Método             | Fallback                                                          |
+| ---------- | ------------------ | ----------------------------------------------------------------- |
+| `users`    | `POST /auth/login` | Erro: "Authentication service unavailable"                        |
+| `users`    | qualquer outro     | Erro: "User service unavailable"                                  |
+| `products` | `GET`              | Cache (default: `{ products: [], total: 0, page: 1, limit: 10 }`) |
+| `products` | não-GET            | Erro: "Product service unavailable"                               |
+| `checkout` | qualquer           | Erro: "checkout service unavailable"                              |
+| `payments` | qualquer           | Erro: "payments service unavailable"                              |
+| padrão     | qualquer           | Erro: "Service unavailable"                                       |
 
 O fallback de cache do `products` retorna a última resposta GET armazenada, ou o valor padrão se não houver cache.
 
@@ -339,19 +365,19 @@ Implementa retry com **exponential backoff** e **jitter** seguindo a recomendaç
 
 ```typescript
 interface RetryOptions {
-  maxRetries: number;       // Número máximo de retentativas (padrão: 3)
-  baseDelay: number;        // Atraso inicial em ms (padrão: 1000)
-  maxDelay: number;         // Atraso máximo em ms (padrão: 30000)
+  maxRetries: number; // Número máximo de retentativas (padrão: 3)
+  baseDelay: number; // Atraso inicial em ms (padrão: 1000)
+  maxDelay: number; // Atraso máximo em ms (padrão: 30000)
   backoffMultiplier: number; // Multiplicador por tentativa (padrão: 2)
-  jitter: boolean;          // Adiciona aleatoriedade ao delay (padrão: true)
+  jitter: boolean; // Adiciona aleatoriedade ao delay (padrão: true)
 }
 
 interface RetryResult<T> {
   success: boolean;
   data?: T;
   error?: Error;
-  attempts: number;    // Quantas tentativas foram feitas
-  totalTime: number;   // Tempo total em ms
+  attempts: number; // Quantas tentativas foram feitas
+  totalTime: number; // Tempo total em ms
 }
 ```
 
@@ -364,6 +390,7 @@ delay = min(delay, maxDelay)
 ```
 
 Exemplo com `baseDelay=1000`, `backoffMultiplier=2`:
+
 - Tentativa 1: ~500ms–1000ms
 - Tentativa 2: ~1000ms–2000ms
 - Tentativa 3: ~2000ms–4000ms
@@ -390,10 +417,10 @@ Controla o tempo máximo de espera de operações assíncronas usando `Promise.r
 
 ```typescript
 interface TimeoutOptions {
-  timeout: number;           // Tempo limite em ms (padrão: 5000)
-  retries: number;           // Número de tentativas (padrão: 3)
+  timeout: number; // Tempo limite em ms (padrão: 5000)
+  retries: number; // Número de tentativas (padrão: 3)
   backoffMultiplier: number; // Multiplicador de backoff (padrão: 2)
-  maxBackoff: number;        // Backoff máximo em ms (padrão: 30000)
+  maxBackoff: number; // Backoff máximo em ms (padrão: 30000)
 }
 ```
 
@@ -410,8 +437,11 @@ Método simples: corre `operation()` contra uma promise que rejeita após `timeo
 return Promise.race([
   operation(),
   new Promise((_, reject) =>
-    setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
-  )
+    setTimeout(
+      () => reject(new Error(`Operation timed out after ${timeoutMs}ms`)),
+      timeoutMs,
+    ),
+  ),
 ]);
 ```
 
@@ -435,10 +465,10 @@ CLOSED ──(failureThreshold atingido)──► OPEN
 
 #### Estados
 
-| Estado | Comportamento |
-|--------|--------------|
-| `CLOSED` | Operação executada normalmente. `failureCount` é incrementado a cada falha. |
-| `OPEN` | Operação **bloqueada**. Fallback chamado imediatamente. Aguarda `resetTimeout` para tentar novamente. |
+| Estado      | Comportamento                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------------- |
+| `CLOSED`    | Operação executada normalmente. `failureCount` é incrementado a cada falha.                              |
+| `OPEN`      | Operação **bloqueada**. Fallback chamado imediatamente. Aguarda `resetTimeout` para tentar novamente.    |
 | `HALF_OPEN` | `resetTimeout` expirou. Permite **uma tentativa**. Se bem-sucedida → CLOSED; se falhar → OPEN novamente. |
 
 #### Interface
@@ -446,8 +476,8 @@ CLOSED ──(failureThreshold atingido)──► OPEN
 ```typescript
 interface CircuitBreakerOptions {
   failureThreshold: number; // Falhas consecutivas para abrir o circuito
-  timeout: number;          // Tempo (ms) que o circuito fica em OPEN antes de tentar HALF_OPEN
-  resetTimeout: number;     // Tempo de espera antes da próxima tentativa em HALF_OPEN
+  timeout: number; // Tempo (ms) que o circuito fica em OPEN antes de tentar HALF_OPEN
+  resetTimeout: number; // Tempo de espera antes da próxima tentativa em HALF_OPEN
 }
 
 interface CircuitBreakerState {
@@ -493,9 +523,13 @@ Cache em memória simples (`Map`) com suporte a TTL (Time-To-Live).
 - **Fallback factory:** `createCacheFallback(key, defaultData, timeout?)` — retorna uma função que busca o cache e, se não encontrar, retorna `defaultData`
 
 O `ProxyService` armazena toda resposta GET bem-sucedida automaticamente:
+
 ```typescript
 if (method.toLowerCase() === 'get') {
-  this.cacheFallbackService.setCachedData(`${serviceName}-${path}`, response.data);
+  this.cacheFallbackService.setCachedData(
+    `${serviceName}-${path}`,
+    response.data,
+  );
 }
 ```
 
@@ -509,12 +543,12 @@ Quando o circuit breaker abre para `products` em requisições GET, o fallback t
 
 Fábrica de funções de fallback para diferentes situações:
 
-| Método | Retorno |
-|--------|---------|
+| Método                                                | Retorno                                        |
+| ----------------------------------------------------- | ---------------------------------------------- |
 | `createDefaultFallback(defaultResponse, serviceName)` | Retorna um valor padrão definido pelo chamador |
-| `createErrorFallback(serviceName, errorMessage)` | Lança um `Error` com mensagem descritiva |
-| `createEmptyArrayFallback(serviceName)` | Retorna `[]` |
-| `createEmptyObjectFallback(serviceName)` | Retorna `{}` |
+| `createErrorFallback(serviceName, errorMessage)`      | Lança um `Error` com mensagem descritiva       |
+| `createEmptyArrayFallback(serviceName)`               | Retorna `[]`                                   |
+| `createEmptyObjectFallback(serviceName)`              | Retorna `{}`                                   |
 
 O `ProxyService` usa `createErrorFallback` para serviços críticos como `users`, `checkout` e `payments` — onde retornar dados vazios seria pior do que informar o erro ao cliente.
 
@@ -525,6 +559,7 @@ O `ProxyService` usa `createErrorFallback` para serviços críticos como `users`
 **Arquivo:** `src/auth/auth.module.ts`
 
 ### Imports
+
 - `PassportModule` — framework de autenticação
 - `HttpModule` — para chamar o microserviço `users`
 - `JwtModule.registerAsync(...)` — lê `JWT_SECRET` do `.env`, token expira em `1d`
@@ -533,29 +568,31 @@ O `ProxyService` usa `createErrorFallback` para serviços críticos como `users`
 
 **Arquivo:** `src/auth/auth.service.ts`
 
-| Método | Descrição |
-|--------|-----------|
-| `login(loginDto)` | `POST` para `users-service/login`. Retorna `AuthResponse` com `access_token` e dados do usuário. |
-| `register(registerDto)` | `POST` para `users-service/auth/register`. Retorna `AuthResponse`. |
-| `validateJwtToken(token)` | Usa `JwtService.verify()` para validar o token localmente. Lança `UnauthorizedException` se inválido. |
-| `validateSessionToken(sessionToken)` | `GET` para `users-service/session/validate/:token`. Retorna `UserSession` com `{ valid, user }`. |
+| Método                               | Descrição                                                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `login(loginDto)`                    | `POST` para `users-service/login`. Retorna `AuthResponse` com `access_token` e dados do usuário.      |
+| `register(registerDto)`              | `POST` para `users-service/auth/register`. Retorna `AuthResponse`.                                    |
+| `validateJwtToken(token)`            | Usa `JwtService.verify()` para validar o token localmente. Lança `UnauthorizedException` se inválido. |
+| `validateSessionToken(sessionToken)` | `GET` para `users-service/session/validate/:token`. Retorna `UserSession` com `{ valid, user }`.      |
 
 ### AuthController
 
 **Arquivo:** `src/auth/auth.controller.ts`
 
-| Rota | Método | Throttle | Body |
-|------|--------|---------|------|
-| `POST /auth/login` | `login()` | `short: 5 req/60s` | `LoginDto` |
+| Rota                  | Método       | Throttle            | Body          |
+| --------------------- | ------------ | ------------------- | ------------- |
+| `POST /auth/login`    | `login()`    | `short: 5 req/60s`  | `LoginDto`    |
 | `POST /auth/register` | `register()` | `medium: 3 req/60s` | `RegisterDto` |
 
 ### DTOs
 
 **`LoginDto`** (`src/auth/dtos/login.tdo.ts`):
+
 - `email: string` — validado com `@IsEmail()`
 - `password: string` — mínimo 6 caracteres (`@MinLength(6)`)
 
 **`RegisterDto`** (`src/auth/dtos/register.dto.ts`):
+
 - `email: string` — `@IsEmail()`
 - `password: string` — mínimo 6 caracteres
 - `firstName: string` — `@IsString()`
@@ -567,6 +604,7 @@ O `ProxyService` usa `createErrorFallback` para serviços críticos como `users`
 **Arquivo:** `src/auth/strategies/jwt.strategy.ts`
 
 Estratégia Passport que:
+
 1. Extrai o token do header `Authorization: Bearer <token>`
 2. Valida com a `JWT_SECRET`
 3. Chama `authService.validateJwtToken(payload.token)` para validação adicional
@@ -586,14 +624,17 @@ Estratégia Passport que:
 Estende o `ThrottlerGuard` do `@nestjs/throttler` com dois comportamentos customizados:
 
 **Tracker por IP + User-Agent:**
+
 ```typescript
 protected async getTracker(req): Promise<string> {
   return `${req.ip}-${req.headers['user-agent']}`;
 }
 ```
+
 Clientes diferentes no mesmo IP (ex: navegadores distintos) têm contadores separados.
 
 **Headers de resposta:**
+
 - `X-RateLimit-Limit` — limite da faixa
 - `X-RateLimit-Remaining` — requisições restantes
 - `X-RateLimit-Reset` — segundos até resetar
@@ -607,6 +648,7 @@ Clientes diferentes no mesmo IP (ex: navegadores distintos) têm contadores sepa
 **Status:** Existe no código mas não está em nenhum `APP_GUARD` nem `@UseGuards`
 
 O que faz:
+
 1. Verifica se a rota tem o metadata `isPublic` (definido por `@Public()`)
 2. Se sim, passa sem autenticar (`return true`)
 3. Se não, aciona a estratégia Passport `jwt`
@@ -620,6 +662,7 @@ O que faz:
 **Status:** Existe no código mas não está registrado em lugar nenhum
 
 O que faz:
+
 1. Lê os papéis exigidos via `@Roles()` (metadata `roles`)
 2. Se nenhum papel for exigido, passa (`return true`)
 3. Compara `request.user.role` com os papéis permitidos
@@ -635,6 +678,7 @@ O que faz:
 **Status:** Existe no código mas não está registrado em lugar nenhum
 
 O que faz:
+
 1. Extrai o header `x-session-token`
 2. Chama `authService.validateSessionToken(token)` → consulta o `users-service`
 3. Se a sessão for válida, define `request.user = session.user`
@@ -709,13 +753,13 @@ Sistema completo de monitoramento de saúde com quatro endpoints:
 
 ### Endpoints
 
-| Rota | Descrição |
-|------|-----------|
-| `GET /health` | Status do próprio gateway (uptime, memória, versão) |
-| `GET /health/services` | Pinga todos os microserviços e retorna status consolidado |
-| `GET /health/services/:serviceName` | Retorna status em cache de um serviço específico |
-| `GET /health/ready` | Readiness probe — `ready` se todos os serviços estão `healthy` |
-| `GET /health/live` | Liveness probe — sempre retorna `alive` com uptime |
+| Rota                                | Descrição                                                      |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `GET /health`                       | Status do próprio gateway (uptime, memória, versão)            |
+| `GET /health/services`              | Pinga todos os microserviços e retorna status consolidado      |
+| `GET /health/services/:serviceName` | Retorna status em cache de um serviço específico               |
+| `GET /health/ready`                 | Readiness probe — `ready` se todos os serviços estão `healthy` |
+| `GET /health/live`                  | Liveness probe — sempre retorna `alive` com uptime             |
 
 ### Resposta de `GET /health/services`
 
@@ -742,6 +786,7 @@ Sistema completo de monitoramento de saúde com quatro endpoints:
 ```
 
 **Status consolidado:**
+
 - `healthy` — todos os serviços estão saudáveis
 - `degraded` — ao menos um serviço está saudável e ao menos um não
 - `unhealthy` — nenhum serviço responde
@@ -756,11 +801,12 @@ Sistema completo de monitoramento de saúde com quatro endpoints:
 - `checkAllServices()` usa `Promise.allSettled()` para checar os 4 serviços em paralelo
 
 **Estados de saúde:**
+
 ```typescript
 enum HealthStatus {
-  HEALTHY   = 'healthy',
+  HEALTHY = 'healthy',
   UNHEALTHY = 'unhealthy',
-  DEGRADED  = 'degraded',
+  DEGRADED = 'degraded',
 }
 ```
 
@@ -772,12 +818,12 @@ enum HealthStatus {
 
 Intercepta todas as requisições HTTP e gera três tipos de log:
 
-| Evento | Nível | Conteúdo |
-|--------|-------|---------|
-| Entrada | `log` | `METHOD URL - IP - User-Agent` |
-| Saída | `log` | `METHOD URL - statusCode - contentLength - durationMs` |
-| Erro (status >= 400) | `error` | `METHOD URL - statusCode - durationMs` |
-| Timeout | `warn` | `METHOD URL - durationMs` |
+| Evento               | Nível   | Conteúdo                                               |
+| -------------------- | ------- | ------------------------------------------------------ |
+| Entrada              | `log`   | `METHOD URL - IP - User-Agent`                         |
+| Saída                | `log`   | `METHOD URL - statusCode - contentLength - durationMs` |
+| Erro (status >= 400) | `error` | `METHOD URL - statusCode - durationMs`                 |
+| Timeout              | `warn`  | `METHOD URL - durationMs`                              |
 
 O duration é calculado desde a entrada da requisição até o evento `finish` do response.
 
@@ -787,19 +833,19 @@ O duration é calculado desde a entrada da requisição até o evento `finish` d
 
 Configurado com três faixas independentes, cada uma com TTL e limite próprios. Os limites são lidos de variáveis de ambiente com fallback para valores padrão.
 
-| Nome | TTL | Limite padrão | Variável de ambiente |
-|------|-----|---------------|---------------------|
-| `short` | 1 segundo | 10 req | `RATE_LIMIT_SHORT` |
-| `medium` | 60 segundos | 100 req | `RATE_LIMIT_MEDIUM` |
-| `long` | 15 minutos | 1000 req | `RATE_LIMIT_LONG` |
+| Nome     | TTL         | Limite padrão | Variável de ambiente |
+| -------- | ----------- | ------------- | -------------------- |
+| `short`  | 1 segundo   | 10 req        | `RATE_LIMIT_SHORT`   |
+| `medium` | 60 segundos | 100 req       | `RATE_LIMIT_MEDIUM`  |
+| `long`   | 15 minutos  | 1000 req      | `RATE_LIMIT_LONG`    |
 
 **Limites específicos por rota:**
 
-| Rota | Faixa | Limite |
-|------|-------|--------|
-| `POST /auth/login` | `short` | 5 req/60s |
-| `POST /auth/register` | `medium` | 3 req/60s |
-| Todas as demais | `short + medium + long` | Padrão do `.env` |
+| Rota                  | Faixa                   | Limite           |
+| --------------------- | ----------------------- | ---------------- |
+| `POST /auth/login`    | `short`                 | 5 req/60s        |
+| `POST /auth/register` | `medium`                | 3 req/60s        |
+| Todas as demais       | `short + medium + long` | Padrão do `.env` |
 
 O rastreamento é feito por **IP + User-Agent** (`${req.ip}-${req.headers['user-agent']}`).
 
@@ -907,6 +953,7 @@ O guard existe mas nenhuma rota está protegida. Todas as rotas (além do rate l
 **Como ativar globalmente (recomendado):**
 
 `src/app.module.ts`:
+
 ```typescript
 providers: [
   AppService,
@@ -916,6 +963,7 @@ providers: [
 ```
 
 E marcar as rotas públicas com `@Public()`:
+
 ```typescript
 // auth.controller.ts
 @Public()
@@ -958,15 +1006,15 @@ Estão definidos mas sem nenhum uso em módulos, controllers ou como `APP_GUARD`
 
 ## Variáveis de Ambiente
 
-| Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `PORT` | `3005` | Porta do gateway |
-| `JWT_SECRET` | — | Segredo para assinar/verificar JWTs |
-| `CORS_ORIGIN` | `*` | Origins permitidas (separadas por vírgula) |
-| `USERS_SERVICE_URL` | `http://localhost:3000` | URL do microserviço de usuários |
-| `PRODUCTS_SERVICE_URL` | `http://localhost:3001` | URL do microserviço de produtos |
-| `CHECKOUT_SERVICE_URL` | `http://localhost:3003` | URL do microserviço de checkout |
-| `PAYMENTS_SERVICE_URL` | `http://localhost:3004` | URL do microserviço de pagamentos |
-| `RATE_LIMIT_SHORT` | `10` | Limite do throttle `short` (por 1s) |
-| `RATE_LIMIT_MEDIUM` | `100` | Limite do throttle `medium` (por 60s) |
-| `RATE_LIMIT_LONG` | `1000` | Limite do throttle `long` (por 15min) |
+| Variável               | Padrão                  | Descrição                                  |
+| ---------------------- | ----------------------- | ------------------------------------------ |
+| `PORT`                 | `3005`                  | Porta do gateway                           |
+| `JWT_SECRET`           | —                       | Segredo para assinar/verificar JWTs        |
+| `CORS_ORIGIN`          | `*`                     | Origins permitidas (separadas por vírgula) |
+| `USERS_SERVICE_URL`    | `http://localhost:3000` | URL do microserviço de usuários            |
+| `PRODUCTS_SERVICE_URL` | `http://localhost:3001` | URL do microserviço de produtos            |
+| `CHECKOUT_SERVICE_URL` | `http://localhost:3003` | URL do microserviço de checkout            |
+| `PAYMENTS_SERVICE_URL` | `http://localhost:3004` | URL do microserviço de pagamentos          |
+| `RATE_LIMIT_SHORT`     | `10`                    | Limite do throttle `short` (por 1s)        |
+| `RATE_LIMIT_MEDIUM`    | `100`                   | Limite do throttle `medium` (por 60s)      |
+| `RATE_LIMIT_LONG`      | `1000`                  | Limite do throttle `long` (por 15min)      |

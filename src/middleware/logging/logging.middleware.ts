@@ -11,7 +11,7 @@ export class LoggingMiddleware implements NestMiddleware {
     const startTime = Date.now();
 
     this.logger.log(
-      `Incoming Request: ${method} ${originalUrl} - IP: ${ip} - User-Agent :${userAgent}`,
+      `Requisição recebida: ${method} ${originalUrl} - IP: ${ip} - User-Agent: ${userAgent}`,
     );
 
     res.on('finish', () => {
@@ -20,12 +20,12 @@ export class LoggingMiddleware implements NestMiddleware {
       const duration = Date.now() - startTime;
 
       this.logger.log(
-        `Outgoing Response: ${method} ${originalUrl} - ${statusCode} - ${contentLength || 0}b - ${duration}ms`,
+        `Resposta enviada: ${method} ${originalUrl} - ${statusCode} - ${contentLength || 0}b - ${duration}ms`,
       );
 
       if (statusCode >= 400) {
         this.logger.error(
-          `Error Response: ${method} ${originalUrl} - ${statusCode} - ${duration}ms`,
+          `Resposta com erro: ${method} ${originalUrl} - ${statusCode} - ${duration}ms`,
         );
       }
     });
@@ -33,14 +33,14 @@ export class LoggingMiddleware implements NestMiddleware {
     // Log de erros
     res.on('error', (error) => {
       this.logger.error(
-        `Response Error: ${method} ${originalUrl} - ${error.message}`,
+        `Erro na resposta: ${method} ${originalUrl} - ${error.message}`,
       );
     });
 
     // Log de timeout
     req.on('timeout', () => {
       this.logger.warn(
-        `Request Timeout: ${method} ${originalUrl} - ${Date.now() - startTime}ms`,
+        `Timeout da requisição: ${method} ${originalUrl} - ${Date.now() - startTime}ms`,
       );
     });
 

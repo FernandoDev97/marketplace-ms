@@ -23,14 +23,14 @@ export class RetryService {
     for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
       try {
         this.logger.debug(
-          `Retry attempt ${attempt + 1}/${config.maxRetries + 1}`,
+          `Tentativa de retry ${attempt + 1}/${config.maxRetries + 1}`,
         );
 
         const data = await operation();
         const totalTime = Date.now() - startTime;
 
         this.logger.log(
-          `Operation succeeded on attempt ${attempt + 1} in ${totalTime}ms`,
+          `Operação bem-sucedida na tentativa ${attempt + 1} em ${totalTime}ms`,
         );
 
         return {
@@ -41,11 +41,11 @@ export class RetryService {
         };
       } catch (error) {
         lastError = error as Error;
-        this.logger.warn(`Attempt ${attempt + 1} failed: ${lastError.message}`);
+        this.logger.warn(`Tentativa ${attempt + 1} falhou: ${lastError.message}`);
 
         if (attempt < config.maxRetries) {
           const delay = this.calculateDelay(attempt, config);
-          this.logger.debug(`Waiting ${delay}ms before retry`);
+          this.logger.debug(`Aguardando ${delay}ms antes de tentar novamente`);
           await this.delay(delay);
         }
       }
@@ -53,7 +53,7 @@ export class RetryService {
 
     const totalTime = Date.now() - startTime;
     this.logger.error(
-      `All ${config.maxRetries + 1} attempts failed in ${totalTime}ms`,
+      `Todas as ${config.maxRetries + 1} tentativas falharam em ${totalTime}ms`,
     );
 
     return {

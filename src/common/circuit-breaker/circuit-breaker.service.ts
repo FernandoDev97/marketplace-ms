@@ -26,7 +26,7 @@ export class CircuitBreakerService {
 
     if (circuit.state === CircuitBreakerStateEnum.OPEN) {
       if (Date.now() < circuit.nextAttemptTime) {
-        this.logger.warn(`Circuit breaker OPEN for ${key}, using fallback`);
+        this.logger.warn(`Circuit breaker ABERTO para ${key}, usando fallback`);
 
         if (fallback) {
           return await fallback();
@@ -36,7 +36,7 @@ export class CircuitBreakerService {
       } else {
         circuit.state = CircuitBreakerStateEnum.HALF_OPEN;
         this.logger.warn(
-          `Circuit breaker HALF_OPEN for ${key}, using fallback`,
+          `Circuit breaker SEMI-ABERTO para ${key}, usando fallback`,
         );
       }
     }
@@ -48,10 +48,10 @@ export class CircuitBreakerService {
       return result;
     } catch (error) {
       this.onFailure(circuit, key, options);
-      this.logger.error(`Circuit breaker failure for ${key}:`, error.message);
+      this.logger.error(`Falha no circuit breaker para ${key}:`, error.message);
 
       if (fallback) {
-        this.logger.log(`Using fallback for ${key}`);
+        this.logger.log(`Usando fallback para ${key}`);
         return await fallback();
       }
 
@@ -78,7 +78,7 @@ export class CircuitBreakerService {
   private onSuccess(circuit: CircuitBreakerState, key: string): void {
     circuit.failureCount = 0;
     circuit.state = CircuitBreakerStateEnum.CLOSED;
-    this.logger.debug(`Circuit breaker SUCCESS for ${key}, state: CLOSED`);
+    this.logger.debug(`Circuit breaker SUCESSO para ${key}, estado: FECHADO`);
   }
 
   private onFailure(
@@ -93,7 +93,7 @@ export class CircuitBreakerService {
       circuit.state = CircuitBreakerStateEnum.OPEN;
       circuit.nextAttemptTime = Date.now() + options.resetTimeout;
       this.logger.warn(
-        `Circuit breaker OPENED for ${key} after ${circuit.failureCount} failures`,
+        `Circuit breaker ABERTO para ${key} após ${circuit.failureCount} falhas`,
       );
     }
   }
@@ -108,6 +108,6 @@ export class CircuitBreakerService {
 
   resetCircuit(key: string): void {
     this.circuits.delete(key);
-    this.logger.log(`Circuit breaker RESET for ${key}`);
+    this.logger.log(`Circuit breaker REINICIADO para ${key}`);
   }
 }

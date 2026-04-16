@@ -22,7 +22,7 @@ export class CacheFallbackService {
       return null;
     }
 
-    this.logger.log(`Cache HIT for key: ${key}`);
+    this.logger.log(`Cache HIT para a chave: ${key}`);
     return cached.data;
   }
 
@@ -31,7 +31,7 @@ export class CacheFallbackService {
       data,
       timestamp: Date.now(),
     });
-    this.logger.log(`Cache SET for key: ${key}`);
+    this.logger.log(`Cache SET para a chave: ${key}`);
   }
 
   createCacheFallback<T>(
@@ -43,11 +43,11 @@ export class CacheFallbackService {
       const cached = await this.getCachedData<T>(key, timeout);
 
       if (cached) {
-        this.logger.log(`Using cached data for ${key}`);
+        this.logger.log(`Usando dados em cache para ${key}`);
         return cached;
       }
 
-      this.logger.warn(`No cached data available for ${key}, using default`);
+      this.logger.warn(`Nenhum dado em cache disponível para ${key}, usando padrão`);
 
       return defaultData;
     };

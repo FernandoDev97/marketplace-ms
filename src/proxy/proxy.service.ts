@@ -40,7 +40,7 @@ export class ProxyService {
     const service = serviceConfig[serviceName];
     const url = `${service.url}${path}`;
 
-    this.logger.log(`Proxying ${method} request to ${serviceName}: ${url}`);
+    this.logger.log(`Redirecionando requisição ${method} para ${serviceName}: ${url}`);
 
     const fallback = this.createServiceFallback(serviceName, method, path);
 

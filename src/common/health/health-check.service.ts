@@ -69,7 +69,7 @@ export class HealthCheckService {
       };
       this.healthCache.set(serviceName, serviceHealth);
       this.logger.error(
-        `Health check failed for ${serviceName}`,
+        `Verificação de saúde falhou para ${serviceName}`,
         error.message,
       );
 

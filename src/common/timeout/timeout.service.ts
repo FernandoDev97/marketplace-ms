@@ -29,7 +29,7 @@ export class TimeoutService {
 
     for (let attempt = 0; attempt <= options.retries; attempt++) {
       try {
-        this.logger.debug(`Attempt ${attempt + 1}/${options.retries + 1}`);
+        this.logger.debug(`Tentativa ${attempt + 1}/${options.retries + 1}`);
 
         const result = await Promise.race([
           operation(),
@@ -37,13 +37,13 @@ export class TimeoutService {
         ]);
 
         if (attempt > 0) {
-          this.logger.log(`Operation succeeded on attempt ${attempt + 1}`);
+          this.logger.log(`Operação bem-sucedida na tentativa ${attempt + 1}`);
         }
 
         return result as T;
       } catch (error) {
         lastError = error as Error;
-        this.logger.warn(`Attempt ${attempt + 1} failed: ${lastError.message}`);
+        this.logger.warn(`Tentativa ${attempt + 1} falhou: ${lastError.message}`);
 
         if (attempt < options.retries) {
           await this.delay(delay);
@@ -55,7 +55,7 @@ export class TimeoutService {
       }
     }
 
-    this.logger.error(`All ${options.retries + 1} attempts failed`);
+    this.logger.error(`Todas as ${options.retries + 1} tentativas falharam`);
 
     throw lastError!;
   }
